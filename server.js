@@ -11,6 +11,12 @@ app.use(cors());
 app.use(bodyParser.json());
 const port = process.env.PORT || 5001;
 
+// simple health-check root path
+app.get('/', (_req, res) => {
+    res.send('backend running');
+});
+
+
 // JWT secret key
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -22,7 +28,21 @@ const db = mysql.createConnection({
     database: process.env.DB_NAME || 'ecommerce'
 });
 
-db.connect((err) => {
+db.connect((err) => {const fs = require('fs');
+
+const dbConfig = {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  /* optional SSL */
+  ssl: process.env.DB_CA_CERT
+     ? { ca: process.env.DB_CA_CERT }
+     : undefined
+};
+
+const db = mysql.createPool(dbConfig);        // pool is better on serverless
     if (err) {
         console.error('Error connecting to database:', err);
     } else {
@@ -1238,22 +1258,13 @@ app.get('/category', (req, res) => {
     });
 });
 
-// Start server
-app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
+// export app for serverless platforms and conditionally start listener
+module.exports = app;
 
-const mysql = require("mysql2/promise");
+// when run directly (e.g. `node server.js`) listen on port
+if (require.main === module) {
+    app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
+}
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: true
-  }
-});
-
-module.exports = pool;
 
 
