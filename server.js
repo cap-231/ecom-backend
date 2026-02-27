@@ -7,15 +7,32 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+
+// CORS Configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests from your frontend URLs
+        const allowedOrigins = [
+            'https://ecom-frontend-lyart-nine.vercel.app',
+            'https://ecom-frontend-1s95oo36v-cap-231s-projects.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:5173'
+        ];
+        
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 const port = process.env.PORT || 5001;
-
-// simple health-check root path
-app.get('/', (_req, res) => {
-    res.send('backend running');
-});
-
 
 // JWT secret key
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -28,21 +45,7 @@ const db = mysql.createConnection({
     database: process.env.DB_NAME || 'ecommerce'
 });
 
-db.connect((err) => {const fs = require('fs');
-
-const dbConfig = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  /* optional SSL */
-  ssl: process.env.DB_CA_CERT
-     ? { ca: process.env.DB_CA_CERT }
-     : undefined
-};
-
-const db = mysql.createPool(dbConfig);        // pool is better on serverless
+db.connect((err) => {
     if (err) {
         console.error('Error connecting to database:', err);
     } else {
@@ -132,6 +135,9 @@ const tables = {
 // =====================
 // CUSTOM API ENDPOINTS
 // =====================
+
+// Handle preflight requests for all routes
+app.options('*', cors(corsOptions));
 
 // Cart endpoints
 app.get('/cart', verifyCustomerToken, (req, res) => {
@@ -1258,13 +1264,8 @@ app.get('/category', (req, res) => {
     });
 });
 
-// export app for serverless platforms and conditionally start listener
-module.exports = app;
-
-// when run directly (e.g. `node server.js`) listen on port
-if (require.main === module) {
-    app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
-}
+// Start server
+app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
 
 
 
