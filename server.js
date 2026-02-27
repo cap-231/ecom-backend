@@ -546,7 +546,14 @@ app.post('/order/checkout', verifyCustomerToken, async (req, res) => {
     const placeholders = productIds.map(() => '?').join(',');
     const taxQuery = `SELECT * FROM tax WHERE ProductID IN (${placeholders})`;
     db.query(taxQuery, productIds, (taxErr, taxResults) => {
-        if (taxErr) return res.status(500).json({ error: 'Database error fetching tax info' });
+        if (taxErr) {
+            // If tax table doesn't exist, continue without tax instead of failing checkout
+            if (taxErr.code === 'ER_NO_SUCH_TABLE') {
+                taxResults = [];
+            } else {
+                return res.status(500).json({ error: 'Database error fetching tax info' });
+            }
+        }
 
         // Map productId to tax info
         const taxMap = {};
@@ -1077,10 +1084,43 @@ const createProductTable = () => {
     });
 };
 
+// Create loyalty points related tables if they don't exist
+const createLoyaltyTables = () => {
+    const loyaltyTableQuery = `
+        CREATE TABLE IF NOT EXISTS LoyaltyPoints (
+            LoyaltyID INT AUTO_INCREMENT PRIMARY KEY,
+            CustomerID INT NOT NULL,
+            Points INT NOT NULL DEFAULT 0,
+            EarnedDate DATETIME NOT NULL,
+            FOREIGN KEY (CustomerID) REFERENCES customer(CustomerID)
+        )
+    `;
+
+    const pointsHistoryQuery = `
+        CREATE TABLE IF NOT EXISTS PointsHistory (
+            HistoryID INT AUTO_INCREMENT PRIMARY KEY,
+            CustomerID INT NOT NULL,
+            Points INT NOT NULL,
+            Description VARCHAR(255),
+            Date DATETIME NOT NULL,
+            FOREIGN KEY (CustomerID) REFERENCES customer(CustomerID)
+        )
+    `;
+
+    db.query(loyaltyTableQuery, (err) => {
+        if (err) console.error('Error creating LoyaltyPoints table:', err);
+    });
+
+    db.query(pointsHistoryQuery, (err) => {
+        if (err) console.error('Error creating PointsHistory table:', err);
+    });
+};
+
 // Call these functions at server startup
 createProductTable();
 createOrdersTable();
 createOrderItemTable();
+createLoyaltyTables();
 
 // Get order items for a customer (for returns)
 app.get('/orderitems/by-customer', (req, res) => {
