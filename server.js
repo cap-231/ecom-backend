@@ -11,19 +11,29 @@ const app = express();
 // CORS Configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests from your frontend URLs
+        // Allow requests from your known frontend URLs and Vercel previews
         const allowedOrigins = [
             'https://ecom-frontend-lyart-nine.vercel.app',
             'https://ecom-frontend-1s95oo36v-cap-231s-projects.vercel.app',
             'http://localhost:3000',
             'http://localhost:5173'
         ];
-        
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+
+        // Allow non-browser tools / same-origin (no Origin header)
+        if (!origin) {
+            return callback(null, true);
         }
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow any Vercel deployments for this frontend project
+        if (origin.endsWith('.vercel.app') && origin.includes('ecom-frontend-')) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
