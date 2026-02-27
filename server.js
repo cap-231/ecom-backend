@@ -431,25 +431,36 @@ app.post('/loyalty/redeem', verifyCustomerToken, async (req, res) => {
 });
 
 app.get('/loyalty/points', verifyCustomerToken, async (req, res) => {
-    const customerId = req.customer.id;
-    try {
-        // Get current points
-        db.query('SELECT Points FROM LoyaltyPoints WHERE CustomerID = ?', [customerId], (err, pointsResult) => {
-            if (err) return res.status(500).json({ error: 'Database error fetching points' });
-            const points = pointsResult.length > 0 ? pointsResult[0].Points : 0;
-            // Get points history
-            db.query('SELECT Points, Description, Date FROM PointsHistory WHERE CustomerID = ? ORDER BY Date DESC', [customerId], (err2, historyResult) => {
-                if (err2) return res.status(500).json({ error: 'Database error fetching points history' });
-                const history = historyResult.map(row => ({
-                    points: row.Points,
-                    description: row.Description,
-                    date: row.Date
-                }));
-                res.json({ points, history });
-            });
+    const customerId = req.customer?.id;
+    console.log('Loyalty points request for customer:', customerId);
+
+    if (!customerId) {
+        return res.status(400).json({ error: 'Customer ID missing from token' });
+    }
+
+    // Helper to run queries that return a promise
+    const runQuery = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
         });
+    });
+
+    try {
+        const pointsResult = await runQuery('SELECT Points FROM LoyaltyPoints WHERE CustomerID = ?', [customerId]);
+        const points = (Array.isArray(pointsResult) && pointsResult.length > 0) ? pointsResult[0].Points : 0;
+
+        const historyResult = await runQuery('SELECT Points, Description, Date FROM PointsHistory WHERE CustomerID = ? ORDER BY Date DESC', [customerId]);
+        const history = Array.isArray(historyResult) ? historyResult.map(row => ({
+            points: row.Points,
+            description: row.Description,
+            date: row.Date
+        })) : [];
+
+        res.json({ points, history });
     } catch (err) {
-        res.status(500).json({ error: 'Server error' });
+        console.error('Error fetching loyalty points/history for customer', customerId, err);
+        res.status(500).json({ error: 'Database error fetching loyalty points' });
     }
 });
 
