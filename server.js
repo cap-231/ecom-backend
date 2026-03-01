@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
@@ -16,7 +16,7 @@ const corsOptions = {
             'https://ecom-frontend-lyart-nine.vercel.app',
             'https://ecom-frontend-1s95oo36v-cap-231s-projects.vercel.app',
             'http://localhost:3000',
-            'http://localhost:5173'
+            'http://localhost:5001'
         ];
 
         // Allow non-browser tools / same-origin (no Origin header)
@@ -47,21 +47,20 @@ const port = process.env.PORT || 5001;
 // JWT secret key
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// MySQL Database configuration
-const db = mysql.createConnection({
+// MySQL Database connection pool - CRITICAL FOR SERVERLESS
+const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME || 'ecommerce'
+    database: process.env.DB_NAME || 'ecommerce',
+    waitForConnections: true,
+    connectionLimit: 3,  // VERY LOW to avoid max_user_connections limit
+    queueLimit: 10,      // Allow queuing of requests
+    enableKeepAlive: true,
+    keepAliveInitialDelayMs: 0
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Error connecting to database:', err);
-    } else {
-        console.log('Connected to MySQL database');
-    }
-});
+console.log('✅ MySQL connection pool initialized (limit=3, queue=10)');
 
 // Middleware to verify admin token
 const verifyAdminToken = (req, res, next) => {
