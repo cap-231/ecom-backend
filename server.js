@@ -13,8 +13,8 @@ const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests from your known frontend URLs and Vercel previews
         const allowedOrigins = [
-            'https://ecom-frontend-lyart-nine.vercel.app',
-            'https://ecom-frontend-1s95oo36v-cap-231s-projects.vercel.app',
+            'https://halcyon-rho.vercel.app',
+            'halcyon-4zwfws90h-cap-231s-projects.vercel.app',
             'http://localhost:3000',
             'http://localhost:5001'
         ];
@@ -29,7 +29,7 @@ const corsOptions = {
         }
 
         // Allow any Vercel deployments for this frontend project
-        if (origin.endsWith('.vercel.app') && origin.includes('ecom-frontend-')) {
+        if (origin.endsWith('.vercel.app') && origin.includes('halcyon-')) {
             return callback(null, true);
         }
 
