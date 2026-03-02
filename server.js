@@ -13,8 +13,8 @@ const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests from your known frontend URLs and Vercel previews
         const allowedOrigins = [
-            'https://halcyon-rho.vercel.app',
-            'halcyon-4zwfws90h-cap-231s-projects.vercel.app',
+            'https://ecom-frontend-lyart-nine.vercel.app',
+            'https://ecom-frontend-1s95oo36v-cap-231s-projects.vercel.app',
             'http://localhost:3000',
             'http://localhost:5001'
         ];
@@ -29,7 +29,7 @@ const corsOptions = {
         }
 
         // Allow any Vercel deployments for this frontend project
-        if (origin.endsWith('.vercel.app') && origin.includes('halcyon-')) {
+        if (origin.endsWith('.vercel.app') && origin.includes('ecom-frontend-')) {
             return callback(null, true);
         }
 
@@ -48,22 +48,28 @@ const port = process.env.PORT || 5001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // MySQL Database connection pool - CRITICAL FOR SERVERLESS
-const db = mysql.createPool({
+// use global variable to reuse pool in warm lambdas
+const db = global.__dbPool || mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    waitForConnections: true,
     ssl: {
     rejectUnauthorized: false // Required for Aiven/Vercel handshake
-    },
-    waitForConnections: true,
-    connectionLimit: 3,  // VERY LOW to avoid max_user_connections limit
+     },
+
+    connectionLimit: 1,  // restrict each lambda to one connection
     queueLimit: 10,      // Allow queuing of requests
     enableKeepAlive: true,
     keepAliveInitialDelayMs: 0
 });
-
-console.log('✅ MySQL connection pool initialized (limit=3, queue=10)');
+if (!global.__dbPool) {
+    global.__dbPool = db;
+    console.log('✅ MySQL connection pool created (limit=1, queue=10)');
+} else {
+    console.log('♻️ Reusing existing MySQL connection pool');
+}
 
 // Middleware to verify admin token
 const verifyAdminToken = (req, res, next) => {
@@ -1323,6 +1329,43 @@ app.get('/category', (req, res) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
+        res.json(results);
+    });
+});
+
+// Aggregated endpoint returning all store data in one connection
+app.get('/store-data', (req, res) => {
+    // sequential queries using same connection
+    db.query('SELECT * FROM product', (err, products) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching products' });
+        db.query('SELECT * FROM subcategory', (err2, subcategories) => {
+            if (err2) return res.status(500).json({ error: 'Database error fetching subcategories' });
+            db.query('SELECT * FROM category', (err3, categories) => {
+                if (err3) return res.status(500).json({ error: 'Database error fetching categories' });
+                res.json({ products, subcategories, categories });
+            });
+        });
+    });
+});
+
+// Bulk endpoints in case other clients need them
+app.get('/products', (req, res) => {
+    db.query('SELECT * FROM product', (err, results) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching products' });
+        res.json(results);
+    });
+});
+
+app.get('/subcategories', (req, res) => {
+    db.query('SELECT * FROM subcategory', (err, results) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching subcategories' });
+        res.json(results);
+    });
+});
+
+app.get('/categories', (req, res) => {
+    db.query('SELECT * FROM category', (err, results) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching categories' });
         res.json(results);
     });
 });
