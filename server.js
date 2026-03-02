@@ -457,10 +457,10 @@ app.get('/loyalty/points', verifyCustomerToken, async (req, res) => {
     });
 
     try {
-        const pointsResult = await runQuery('SELECT Points FROM LoyaltyPoints WHERE CustomerID = ?', [customerId]);
+        const pointsResult = await runQuery('SELECT Points FROM loyaltypoints WHERE CustomerID = ?', [customerId]);
         const points = (Array.isArray(pointsResult) && pointsResult.length > 0) ? pointsResult[0].Points : 0;
 
-        const historyResult = await runQuery('SELECT Points, Description, Date FROM PointsHistory WHERE CustomerID = ? ORDER BY Date DESC', [customerId]);
+        const historyResult = await runQuery('SELECT Points, Description, Date FROM pointshistory WHERE CustomerID = ? ORDER BY Date DESC', [customerId]);
         const history = Array.isArray(historyResult) ? historyResult.map(row => ({
             points: row.Points,
             description: row.Description,
