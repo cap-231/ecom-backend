@@ -8,81 +8,96 @@
   ],
   "routes": [
     {
-      "src": "/api(.*)",
+      "src": "/api/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/auth(.*)",
+      "src": "/auth/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/admin(.*)",
+      "src": "/store-data",
       "dest": "server.js"
     },
     {
-      "src": "/cart(.*)",
+      "src": "/categories",
       "dest": "server.js"
     },
     {
-      "src": "/wishlist(.*)",
+      "src": "/subcategories",
       "dest": "server.js"
     },
     {
-      "src": "/order(.*)",
+      "src": "/admin/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/loyalty(.*)",
+      "src": "/cart/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/discount(.*)",
+      "src": "/wishlist/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/customersupport(.*)",
+      "src": "/order/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/blogs(.*)",
+      "src": "/loyalty/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/product(.*)",
+      "src": "/discount/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/category(.*)",
+      "src": "/customersupport/(.*)",
       "dest": "server.js"
     },
     {
-      "src": "/subcategory(.*)",
+      "src": "/blogs",
       "dest": "server.js"
     },
     {
-      "src": "/reviews(.*)",
+      "src": "/products",
       "dest": "server.js"
     },
     {
-      "src": "/orderitems(.*)",
+      "src": "/product",
       "dest": "server.js"
     },
     {
-      "src": "/returns(.*)",
+      "src": "/category",
       "dest": "server.js"
     },
     {
-      "src": "/exchange(.*)",
+      "src": "/subcategory",
       "dest": "server.js"
     },
     {
-      "src": "/return(.*)",
+      "src": "/reviews/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/orderitems/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/returns/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/exchange/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/return/(.*)",
       "dest": "server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "$1"
+      "dest": "server.js"
     }
   ]
 }
- 
