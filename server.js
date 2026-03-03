@@ -637,10 +637,10 @@ app.post('/order/checkout', verifyCustomerToken, async (req, res) => {
                                 connection.release();
                                 return res.status(500).json({ error: 'Database error (insert tax info)' });
                             }
-                            continueOrderPlacement(connection, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax);
+                            continueOrderPlacement(connection, address, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax);
                         });
                     } else {
-                        continueOrderPlacement(connection, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax);
+                        continueOrderPlacement(connection, address, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax);
                     }
                 });
             });
@@ -648,7 +648,7 @@ app.post('/order/checkout', verifyCustomerToken, async (req, res) => {
     });
 });
 
-function continueOrderPlacement(connection, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax) {
+function continueOrderPlacement(connection, address, orderId, totalAmount, paymentMethod, transactionId, items, customerId, totalTax) {
     // Insert shipping info
     const shippingQuery = 'INSERT INTO shipping (OrderID, Address, Status) VALUES (?, ?, ?)';
     connection.query(shippingQuery, [orderId, address || 'Default Address', 'Processing'], (err, shippingResult) => {
